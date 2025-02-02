@@ -6,6 +6,8 @@ GENERATED IN PARTNERSHIP WITH AI
 
 BAML is a cutting-edge domain-specific language designed to seamlessly integrate the semantic prowess of large language models (LLMs) with the precision of traditional deterministic programming. By generating structured outputs that are reliable and developer-friendly, BAML addresses the common challenges of non-deterministic text generation inherent in many LLM applications. Rather than relying on repetitive prompts to achieve valid results, BAML provides a robust framework that ensures consistency and accuracy, making it an indispensable tool for developers who need to merge the flexibility of natural language understanding with the rigidity of structured data processing.
 
+This document assumes that you are using python and you have installed BAML on Visual Studio. 
+
 
 # Introduction 
 ## Hello World
@@ -15,6 +17,7 @@ BAML's core abstraction is a function that written in a type-safe domain-specifi
 
 Here's the most simple function that illustrates the core abstraction: 
 
+```
 function Calculate(str: string) -> string {
   client CustomGPT4oMini
 
@@ -23,11 +26,13 @@ function Calculate(str: string) -> string {
     {{ctx.output_format}}
   "#
 }
+```
 
 In this function, we are expecting a return value of string (normal chat completion from nearly all LLMs) with the input of a string (str).  
 
 If the input to the function Calculate is "if x = 1 and y = 3, what is the value of x + y? ", we expect that somewhere in the description , we will get the answer of 4.  But that 4 can be anywhere. How can we improve through BAML? 
 
+```
 class RetValue {
   value int
 }
@@ -39,12 +44,14 @@ function Calculate(str: string) -> RetValue {
     {{ctx.output_format}}
   "#
 }
+
+```
 ------------------------------------------ end helloworld of BAML ------------------------------------
 ## clients 
 The clients are defined in clients.baml
 
 Specifically 
-
+```
 client<llm> CustomGPT4oMini {
   provider openai
   retry_policy Exponential
@@ -80,6 +87,8 @@ function Calculate(str: string) -> RetValue {
     {{ctx.output_format}}
   "#
 }
+
+```
 then 
 ```
 from baml_client import b
@@ -95,10 +104,9 @@ will use multiple LLMs in a round robin fashion
 ## Types 
 You can define the types through enums or classes
 ### Basic Typing
-hhhh
+
 
 #### Enums
-hhhh
 
 ##### Basic 
 Let’s look at a domain in finance to see how enums capture a set of known, fixed values. Imagine we have an order processing system where each payment goes through distinct statuses. Instead of representing these statuses as strings (which can be error-prone and less descriptive), we can use an enum to enumerate all the valid states. This approach provides better type safety and clarity in our code.
@@ -106,6 +114,8 @@ Let’s look at a domain in finance to see how enums capture a set of known, fix
 Below is an example of how you might define an enum for PaymentStatus in BAML:
 
 -------------------------------------------------------
+
+```
 enum PaymentStatus {
   PENDING @description(#"
     The payment has been initiated, but the final status has not yet been determined.
@@ -123,6 +133,7 @@ enum PaymentStatus {
     The payment was refunded to the customer.
   "#)
 }
+```
 -------------------------------------------------------
 
 In this example, the enum PaymentStatus defines four possible values: PENDING, COMPLETED, FAILED, and REFUNDED. Each value is accompanied by an inline description using the @description annotation. These descriptions serve as documentation that explains the meaning of each status, which can be incredibly useful for developers and for creating user-friendly error or status messages in an interface.
@@ -130,6 +141,7 @@ In this example, the enum PaymentStatus defines four possible values: PENDING, C
 Now let’s create a function that makes use of this enum. Suppose we have a function that determines the status of a payment based on some input criteria. We might define it as follows:
 
 -------------------------------------------------------
+```
 function DeterminePaymentStatus(details: string) -> PaymentStatus {
   client CustomRoundRobin
 
@@ -140,6 +152,8 @@ function DeterminePaymentStatus(details: string) -> PaymentStatus {
     {{ ctx.output_format }}
   "#
 }
+```
+
 -------------------------------------------------------
 ##### Dynamic Enums
 Let's consider a customer support system where new types of support issues emerge over time. As your support team grows and the product evolves, you might start receiving issues that don't neatly fall into your original fixed categories. In this scenario, a dynamic enum lets you adjust the classification of support tickets at runtime.
@@ -147,17 +161,21 @@ Let's consider a customer support system where new types of support issues emerg
 Imagine you initially define a dynamic enum for ticket categories like so:
 
 -------------------------------------------------------
+```
 enum TicketCategory {
   BUG          // Issues where something isn’t working as expected
   FEATURE      // Requests for new enhancements or capabilities
   INQUIRY      // General questions or requests for information
   @@dynamic    // This dynamic marker allows new categories to be added later
 }
+```
 -------------------------------------------------------
 
 You then create a function that analyzes the ticket description and suggests a category based on its contents:
 
 -------------------------------------------------------
+
+```
 function CategorizeTicket(description: string) -> TicketCategory {
   client CustomRoundRobin
 
@@ -168,6 +186,7 @@ function CategorizeTicket(description: string) -> TicketCategory {
     {{ ctx.output_format }}
   "#
 }
+```
 -------------------------------------------------------
 
 In practice, as your product and support needs change, you might encounter a ticket that doesn’t easily match one of the original categories. For example, suppose customers start reporting an issue that seems related to performance under heavy load—a category not initially considered. With dynamic enums, you can update your TicketCategory at runtime without modifying the original DSL code.
@@ -197,6 +216,10 @@ async def run():
 
 #### Classes
 ##### Dynamic Classes
+
+Here's a simple example illustrating the concept of dynamism
+
+```
 class User {
   name string
   age int
@@ -211,6 +234,7 @@ function DynamicUserCreator(user_info: string) -> User {
     {{ ctx.output_format }}
   "#
 }
+```
 
 
 ```
@@ -232,6 +256,7 @@ Imagine you’re building an inventory system for a car dealership. Vehicles in 
 Below is a BAML DSL example for a dynamic Vehicle class and a function to extract vehicle information from a raw description:
 
 -------------------------------------------------------
+```
 class Vehicle {
   brand  string
   model  string
@@ -252,11 +277,14 @@ function ExtractVehicleInfo(description: string) -> Vehicle {
     {{ description }}
   "#
 }
+```
 -------------------------------------------------------
 
 In this example, we define a Vehicle class with basic properties, and the @@dynamic directive indicates that it can be extended at runtime. Suppose you start receiving vehicle data that includes additional attributes like fuel type and electric range for hybrid or electric vehicles. You can use the BAML TypeBuilder in Python to enrich the Vehicle class at runtime:
 
 -------------------------------------------------------
+
+```
 from baml_client.type_builder import TypeBuilder
 from baml_client import b
 
@@ -278,17 +306,19 @@ async def run():
     
     print("Extracted vehicle information:")
     print(result)
+```
 -------------------------------------------------------
 ### Advanced Typing
-#### Creating new dynamic classes or enums not in BAML
-Imagine you’re building an online marketplace. Initially, the BAML definitions include a basic User type containing only name and age. Later, your product team decides that users should also have a preferred membership tier (like “Gold,” “Silver,” or “Bronze”) and a detailed address for shipping purposes. However, your original DSL doesn’t have definitions for MembershipTier or Address. Instead of rewriting your DSL code, you can leverage BAML’s TypeBuilder to “inject” these new types dynamically at runtime.
 
-Below is a step-by-step walkthrough of how this approach works, with an explanation for each step:
+#### Creating new dynamic classes or enums not in BAML
+
+Imagine you’re building an online marketplace. Initially, the BAML definitions include a basic User type containing only name and age. Later, your product team decides that users should also have a preferred membership tier (like “Gold,” “Silver,” or “Bronze”) and a detailed address for shipping purposes. However, the original DSL doesn’t have definitions for MembershipTier or Address. Instead of rewriting your DSL code, you can leverage BAML’s TypeBuilder to “inject” these new types dynamically at runtime.
+
 
 ────────────────────────────────────────
 Step 1. Create New Dynamic Types
 
-You start by creating a new dynamic enum for MembershipTier. This enum wasn’t defined beforehand in your DSL. With TypeBuilder you add the enum “MembershipTier” and populate it with the possible values, for example, Gold, Silver, and Bronze. Then, you create a new dynamic class “Address” to capture a user’s shipping details (like street, city, and postal code).
+You start by creating a new dynamic enum for MembershipTier. This enum wasn’t defined beforehand in the DSL. With TypeBuilder you add the enum “MembershipTier” and populate it with the possible values, for example, Gold, Silver, and Bronze. Then, you create a new dynamic class “Address” to capture a user’s shipping details (like street, city, and postal code).
 
 Example code:
 ────────────────────────────────────────
@@ -344,7 +374,7 @@ type JSON = string | int | float | null | JSON[] | map<string, JSON>;
 ##### Recursive types
 
 Recursive types allow a type to refer to itself (directly or indirectly). This is useful when you need to model nested or hierarchical structures. For example, consider an employee in an organization who can have subordinates that are themselves employees. You can define an Employee class that “recursively” contains a list of Employee objects.
-
+```
 
 class Employee {
   name      string
@@ -366,6 +396,7 @@ function DetermineTeamStructure (str: string) -> Employee {
     {{ ctx.output_format }} 
   "#
 }
+```
 
 
 With sufficient advanced LLMs (o3-mini, deepseekr1), with the followin input text
@@ -373,22 +404,12 @@ With sufficient advanced LLMs (o3-mini, deepseekr1), with the followin input tex
 "George is the CEO of the company. Kelly is the VP of Sales. Asif is the global head of product development. Mohammed manages the shopping cart experience. Tim manages sales in South. Stefan is responsible for sales in the f100 company. Carol is in charge of user experience", 
 
 the recursive data structure of 
-
+```
 name='George' subordinates=[Employee(name='Kelly', subordinates=[Employee(name='Tim', subordinates=[]), Employee(name='Stefan', subordinates=[])]), Employee(name='Asif', subordinates=[Employee(name='Mohammed', subordinates=[]), Employee(name='Carol', subordinates=[])])]
+```
 
 can be extracted. 
 
-
-Product {
-    product_id: string
-    product_title: string
-    product_short_desc: string
-    product_uom: string
-
-    product_type: ProductType
-
-    configurable_parts: Product[]
-}
 
 ## Client Registry
 
@@ -399,6 +420,8 @@ Below is a simple, real-world use case that shows why and how you might want to 
 Imagine you’re building a resume screening tool. You’ve already written a BAML function called ExtractResume that processes a candidate’s resume using an LLM client defined in your .baml files. Initially, your function might look like this:
 
 -------------------------------------------------------
+
+```
 function ExtractResume(text: string) -> Resume {
   client DefaultLLMClient
 
@@ -409,6 +432,8 @@ function ExtractResume(text: string) -> Resume {
     {{ ctx.output_format }}
   "#
 }
+
+```
 -------------------------------------------------------
 
 At some point during development you notice two important things:
@@ -421,6 +446,8 @@ This is where the Client Registry comes in handy. Using the ClientRegistry at ru
 Here’s a simplified Python example using the ClientRegistry:
 
 -------------------------------------------------------
+
+```
 import os
 from baml_py import ClientRegistry
 from baml_client import b  # Assume b is our transpiled BAML module with ExtractResume
@@ -450,6 +477,7 @@ async def run():
 
     print("Extracted Resume Information:")
     print(result)
+```
 
 When run, this function uses the client settings provided in the client registry,
 allowing you to adjust parameters easily at runtime without touching the DSL.
